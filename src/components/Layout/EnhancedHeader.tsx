@@ -1,12 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Bell, Settings, User, LogOut, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import GlassmorphicCard from '../UI/GlassmorphicCard';
 
+interface UserData {
+  email: string;
+  fullName?: string;
+  isAuthenticated: boolean;
+}
+
 export default function EnhancedHeader() {
+  const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications] = useState(3);
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUserData(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUserData(null);
+    navigate('/login');
+  };
+
+  const getUserInitial = () => {
+    if (userData?.fullName) {
+      return userData.fullName.charAt(0).toUpperCase();
+    }
+    return userData?.email.charAt(0).toUpperCase() || 'U';
+  };
+
+  const getDisplayName = () => {
+    if (userData?.fullName) {
+      return userData.fullName;
+    }
+    return userData?.email.split('@')[0] || 'User';
+  };
 
   return (
     <header className="bg-white backdrop-blur-2xl border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
@@ -82,11 +118,11 @@ export default function EnhancedHeader() {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center space-x-3 p-3 rounded-2xl bg-gray-100 backdrop-blur-xl hover:bg-gray-200 transition-all border border-gray-300"
             >
-              <div className="w-10 h-10 bg-black rounded-2xl flex items-center justify-center shadow-lg">
-                <User className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-black rounded-2xl flex items-center justify-center shadow-lg font-bold text-white">
+                {getUserInitial()}
               </div>
               <div className="hidden md:block text-left">
-                <div className="text-sm font-medium text-black">Ahammed S</div>
+                <div className="text-sm font-medium text-black">{getDisplayName()}</div>
                 <div className="text-xs text-gray-600">Premium User</div>
               </div>
             </motion.button>
@@ -110,10 +146,13 @@ export default function EnhancedHeader() {
                         <span className="text-gray-700 group-hover:text-black">Preferences</span>
                       </a>
                       <hr className="border-gray-200 my-2" />
-                      <a href="#" className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 rounded-xl transition-colors text-gray-700 group">
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-100 rounded-xl transition-colors text-gray-700 group"
+                      >
                         <LogOut className="w-4 h-4 group-hover:text-black" />
                         <span className="group-hover:text-black">Sign Out</span>
-                      </a>
+                      </button>
                     </div>
                   </GlassmorphicCard>
                 </motion.div>

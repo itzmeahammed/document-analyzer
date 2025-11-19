@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import EnhancedThreeBackground from './components/Background/EnhancedThreeBackground';
 import EnhancedHeader from './components/Layout/EnhancedHeader';
@@ -6,11 +7,20 @@ import Sidebar from './components/Layout/Sidebar';
 import EnhancedUploadCard from './components/Upload/EnhancedUploadCard';
 import ProcessingPanel from './components/Processing/ProcessingPanel';
 import AwesomeDashboard from './components/Dashboard/AwesomeDashboard';
+import LandingPage from './components/Landing/LandingPage';
+import LoginPage from './components/Auth/LoginPage';
+import SignupPage from './components/Auth/SignupPage';
 import { ProcessingStatus } from './types';
 import GlassmorphicCard from './components/UI/GlassmorphicCard';
 
-function App() {
-  const [activeView, setActiveView] = useState('dashboard');
+interface User {
+  email: string;
+  fullName?: string;
+  isAuthenticated: boolean;
+}
+
+function DashboardLayout() {
+  const [activeView, setActiveView] = useState('landing');
   const [processingStatus] = useState<ProcessingStatus>({
     stage: 'nlp',
     progress: 65,
@@ -21,6 +31,8 @@ function App() {
 
   const renderMainContent = () => {
     switch (activeView) {
+      case 'landing':
+        return <LandingPage />;
       case 'dashboard':
         return <AwesomeDashboard />;
       case 'documents':
@@ -48,7 +60,7 @@ function App() {
           </GlassmorphicCard>
         );
       default:
-        return <AwesomeDashboard />;
+        return <LandingPage />;
     }
   };
 
@@ -108,6 +120,51 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLoginSuccess = (email: string) => {
+    setUser({ email, isAuthenticated: true });
+  };
+
+  const handleSignupSuccess = (email: string) => {
+    setUser({ email, isAuthenticated: true });
+  };
+
+  return (
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/signup" element={<SignupPage onSignupSuccess={handleSignupSuccess} />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={user?.isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}
+        />
+
+        {/* Default Route - Show Landing Page */}
+        <Route
+          path="/"
+          element={<LandingPage />}
+        />
+
+        {/* Catch all - redirect to dashboard or landing */}
+        <Route path="*" element={<Navigate to={user?.isAuthenticated ? "/dashboard" : "/"} />} />
+      </Routes>
+    </Router>
   );
 }
 
